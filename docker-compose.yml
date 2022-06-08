@@ -1,0 +1,55 @@
+version: "3.1"
+services:
+  teamcity-database:
+    image: mysql:${MYSQL_VERSION}
+    platform: linux/amd64
+    restart: always
+    container_name: teamcity-database
+    user: root
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=teamcity
+      - MYSQL_USER=exzray
+      - MYSQL_PASSWORD=960211
+    volumes:
+      - ./mysql/data_dir:/var/lib/mysql
+    networks:
+      - teamcity
+
+  teamcity-server:
+    image: jetbrains/teamcity-server:${TEAMCITY_VERSION}
+    platform: linux/amd64
+    restart: always
+    container_name: teamcity-server
+    user: root
+    ports:
+      - "8111:8111"
+    environment:
+      - TZ=Asia/Kuala_Lumpur
+    volumes:
+      - ./teamcity_data:/data/teamcity_server/datadir
+      - ./teamcity_logs:/opt/teamcity/logs
+    networks:
+      - teamcity
+
+  teamcity-agent-1:
+    image: jetbrains/teamcity-agent:${TEAMCITY_VERSION}
+    platform: linux/amd64
+    container_name: teamcity-agent-1
+    restart: always
+    user: root
+    privileged: true
+    depends_on:
+      - teamcity-server
+    volumes:
+      - ./teamcity_agent_conf1:/data/teamcity_agent/conf
+      - /usr/bin/docker:/usr/bin/docker
+    networks:
+      - teamcity
+    environment:
+      - SERVER_URL=teamcity-server:8111/
+
+networks:
+  teamcity:
